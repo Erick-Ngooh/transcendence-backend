@@ -18,18 +18,17 @@ let PlayersService = class PlayersService {
     }
     async getPlayerById(id) {
         try {
-            let player = await this.prisma.player.findUnique({
-                where: {
-                    id: Number(id),
-                },
+            const player = await this.prisma.player.findUnique({
+                where: { id },
             });
-            if (player)
-                return player;
-            throw new common_1.NotFoundException();
+            if (!player) {
+                throw new common_1.NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+            }
+            return player;
         }
         catch (error) {
-            console.log("Error in getPlayerById");
-            throw new common_1.NotFoundException("Error in getPlayerById: Une erreur s'est produite lors de la recherche du joueur à partir de son ID.");
+            console.error('Erreur lors de la récupération du joueur par ID', error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la récupération du joueur par ID.");
         }
     }
     async setPlayerUrlPhotoProfile(id, urlPhotoProfile) {
@@ -38,13 +37,14 @@ let PlayersService = class PlayersService {
                 where: { id },
                 data: { urlPhotoProfile },
             });
-            if (updatedPlayer)
-                return updatedPlayer;
-            throw new common_1.NotFoundException();
+            if (!updatedPlayer) {
+                throw new common_1.NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+            }
+            return updatedPlayer;
         }
         catch (error) {
-            console.log("Error in setPlayerUrlPhotoProfile");
-            throw new Error("Error in setPlayerUrlPhotoProfile: Une erreur s'est produite lors de la mise à jour de l'URL de la photo de profil du joueur.");
+            console.error("Erreur lors de la mise à jour de l'URL de la photo du joueur", error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la mise à jour de l'URL de la photo du joueur.");
         }
     }
     async setPlayerPseudo(id, pseudo) {
@@ -53,13 +53,14 @@ let PlayersService = class PlayersService {
                 where: { id },
                 data: { pseudo },
             });
-            if (updatedPlayer)
-                return updatedPlayer;
-            throw new common_1.NotFoundException();
+            if (!updatedPlayer) {
+                throw new common_1.NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+            }
+            return updatedPlayer;
         }
         catch (error) {
-            console.log("Error in updatePlayerPseudo");
-            throw new Error("Error in updatePlayerPseudo: Une erreur s'est produite lors de la mise à jour du pseudo du joueur.");
+            console.error("Erreur lors de la mise à jour du pseudo du joueur", error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la mise à jour du pseudo du joueur.");
         }
     }
     async getAllMatchesByPlayerId(id) {
@@ -71,17 +72,17 @@ let PlayersService = class PlayersService {
                     matchesB: true,
                 },
             });
-            if (player) {
-                const matchesA = player.matchesA || [];
-                const matchesB = player.matchesB || [];
-                const matches = [...matchesA, ...matchesB];
-                return matches;
+            if (!player) {
+                throw new common_1.NotFoundException(`Joueur avec l'ID ${id} introuvable`);
             }
-            throw new common_1.NotFoundException();
+            const matchesA = player.matchesA || [];
+            const matchesB = player.matchesB || [];
+            const matches = [...matchesA, ...matchesB];
+            return matches;
         }
         catch (error) {
-            console.log("Error in getAllMatchesByPlayerId");
-            throw new common_1.NotFoundException("Error in getAllMatchesByPlayerId: Une erreur s'est produite lors de la recherche de tous les matches joués par le joueur.");
+            console.error('Erreur lors de la récupération de tous les matches joués par le joueur', error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la récupération de tous les matches joués par le joueur.");
         }
     }
     async getAllPlayers() {
@@ -90,22 +91,46 @@ let PlayersService = class PlayersService {
             return players;
         }
         catch (error) {
-            console.log("Error in getAllPlayers");
-            throw new Error("Error in getAllPlayers: Une erreur s'est produite lors de la récupération des joueurs.");
+            console.error('Erreur lors de la récupération de tous les joueurs', error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la récupération de tous les joueurs.");
         }
     }
     async deletePlayer(playerId) {
         try {
             const deletedPlayer = await this.prisma.player.delete({
-                where: {
-                    id: playerId,
-                },
+                where: { id: playerId },
             });
+            if (!deletedPlayer) {
+                throw new common_1.NotFoundException(`Joueur avec l'ID ${playerId} introuvable`);
+            }
             return deletedPlayer;
         }
         catch (error) {
-            console.log("deletePlayer");
-            throw new Error("deletePlayer: Une erreur s'est produite lors de la suppression du joueur.");
+            console.error("Erreur lors de la suppression du joueur", error);
+            throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la suppression du joueur.");
+        }
+    }
+    async addMatchToPlayer(playerId, matchId) {
+        try {
+            const existingPlayer = await this.getPlayerById(playerId);
+            const updatedPlayer = await this.prisma.player.update({
+                where: { id: playerId },
+                data: {
+                    matchesA: {
+                        connect: [{ id: matchId }],
+                    },
+                },
+            });
+            return updatedPlayer;
+        }
+        catch (error) {
+            console.error("Erreur lors de l'ajout du match au joueur", error);
+            if (error instanceof common_1.NotFoundException) {
+                throw error;
+            }
+            else {
+                throw new common_1.InternalServerErrorException("Une erreur s'est produite lors de la mise à jour du joueur.");
+            }
         }
     }
 };

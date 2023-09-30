@@ -34,11 +34,58 @@ let GameService = class GameService {
                     playerBId,
                 },
             });
+            await this.playersService.addMatchToPlayer(playerAId, match.id);
+            await this.playersService.addMatchToPlayer(playerBId, match.id);
             return match;
         }
         catch (error) {
             console.error("Error in createMatch", error);
             throw new common_1.InternalServerErrorException("An error occurred while creating the match.");
+        }
+    }
+    async updatePlayerAScore(matchId, newScoreA) {
+        const match = await this.prisma.match.update({
+            where: { id: matchId },
+            data: { scoreA: newScoreA },
+        });
+        if (!match)
+            throw new common_1.NotFoundException(`Match with ID ${matchId} not found`);
+        return match;
+    }
+    async updatePlayerBScore(matchId, newScoreB) {
+        const match = await this.prisma.match.update({
+            where: { id: matchId },
+            data: { scoreB: newScoreB },
+        });
+        if (!match)
+            throw new common_1.NotFoundException(`Match with ID ${matchId} not found`);
+        return match;
+    }
+    async getMatchById(matchId) {
+        const match = await this.prisma.match.findUnique({ where: { id: matchId } });
+        if (!match)
+            throw new common_1.NotFoundException(`Match with ID ${matchId} not found`);
+        return match;
+    }
+    async getAllMatchesByPlayerId(playerId) {
+        const player = await this.playersService.getPlayerById(playerId);
+        if (!player)
+            throw new common_1.NotFoundException(`Player with ID ${playerId} not found`);
+        const matchesA = await this.prisma.match.findMany({ where: { playerAId: playerId } });
+        const matchesB = await this.prisma.match.findMany({ where: { playerBId: playerId } });
+        return [...matchesA, ...matchesB];
+    }
+    async deleteMatch(matchId) {
+        const match = await this.prisma.match.findUnique({ where: { id: matchId } });
+        if (!match)
+            throw new common_1.NotFoundException(`Match with ID ${matchId} not found`);
+        try {
+            const deletedMatch = await this.prisma.match.delete({ where: { id: matchId } });
+            return deletedMatch;
+        }
+        catch (error) {
+            console.error("Error in deleteMatch", error);
+            throw new common_1.InternalServerErrorException("An error occurred while deleting the match.");
         }
     }
 };

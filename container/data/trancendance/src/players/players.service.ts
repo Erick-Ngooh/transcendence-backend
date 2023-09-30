@@ -1,12 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Player } from '@prisma/client';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Player, Match, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class PlayersService {
-  constructor(private readonly prisma: PrismaService) {
-
-  }
+  constructor(private readonly prisma: PrismaService)
+  {}
 
   /**
    * Récupère un joueur par son ID.
@@ -16,16 +15,16 @@ export class PlayersService {
    */
   async getPlayerById(id: number): Promise<Player> {
     try {
-      let player = await this.prisma.player.findUnique({
-        where: {
-          id: Number(id),
-        },
+      const player = await this.prisma.player.findUnique({
+        where: { id },
       });
-      if (player) return player;
-      throw new NotFoundException();
+      if (!player) {
+        throw new NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+      }
+      return player;
     } catch (error) {
-      console.log("Error in getPlayerById");
-      throw new NotFoundException("Error in getPlayerById: Une erreur s'est produite lors de la recherche du joueur à partir de son ID.");
+      console.error('Erreur lors de la récupération du joueur par ID', error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la récupération du joueur par ID.");
     }
   }
 
@@ -42,11 +41,13 @@ export class PlayersService {
         where: { id },
         data: { urlPhotoProfile },
       });
-      if (updatedPlayer) return updatedPlayer;
-      throw new NotFoundException();
+      if (!updatedPlayer) {
+        throw new NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+      }
+      return updatedPlayer;
     } catch (error) {
-      console.log("Error in setPlayerUrlPhotoProfile");
-      throw new Error("Error in setPlayerUrlPhotoProfile: Une erreur s'est produite lors de la mise à jour de l'URL de la photo de profil du joueur.");
+      console.error("Erreur lors de la mise à jour de l'URL de la photo du joueur", error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la mise à jour de l'URL de la photo du joueur.");
     }
   }
 
@@ -63,11 +64,13 @@ export class PlayersService {
         where: { id },
         data: { pseudo },
       });
-      if (updatedPlayer) return updatedPlayer;
-      throw new NotFoundException();
+      if (!updatedPlayer) {
+        throw new NotFoundException(`Joueur avec l'ID ${id} introuvable`);
+      }
+      return updatedPlayer;
     } catch (error) {
-      console.log("Error in updatePlayerPseudo");
-      throw new Error("Error in updatePlayerPseudo: Une erreur s'est produite lors de la mise à jour du pseudo du joueur.");
+      console.error("Erreur lors de la mise à jour du pseudo du joueur", error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la mise à jour du pseudo du joueur.");
     }
   }
 
@@ -77,7 +80,7 @@ export class PlayersService {
    * @returns Un tableau de tous les matches joués par le joueur.
    * @throws NotFoundException si le joueur n'est pas trouvé.
    */
-  async getAllMatchesByPlayerId(id: number): Promise<any> {
+  async getAllMatchesByPlayerId(id: number): Promise<Match[]> {
     try {
       const player = await this.prisma.player.findUnique({
         where: { id },
@@ -86,31 +89,31 @@ export class PlayersService {
           matchesB: true,
         },
       });
-      if (player) {
-        const matchesA = player.matchesA || [];
-        const matchesB = player.matchesB || [];
-        const matches = [...matchesA, ...matchesB];
-        return matches;
+      if (!player) {
+        throw new NotFoundException(`Joueur avec l'ID ${id} introuvable`);
       }
-      throw new NotFoundException();
+      const matchesA = player.matchesA || [];
+      const matchesB = player.matchesB || [];
+      const matches = [...matchesA, ...matchesB];
+      return matches;
     } catch (error) {
-      console.log("Error in getAllMatchesByPlayerId");
-      throw new NotFoundException("Error in getAllMatchesByPlayerId: Une erreur s'est produite lors de la recherche de tous les matches joués par le joueur.");
+      console.error('Erreur lors de la récupération de tous les matches joués par le joueur', error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la récupération de tous les matches joués par le joueur.");
     }
   }
 
   /**
    * Récupère tous les joueurs.
    * @returns Un tableau de tous les joueurs.
-   * @throws Error si une erreur se produit lors de la récupération des joueurs.
+   * @throws InternalServerErrorException si une erreur se produit lors de la récupération des joueurs.
    */
   async getAllPlayers(): Promise<Player[]> {
     try {
       const players = await this.prisma.player.findMany();
       return players;
     } catch (error) {
-      console.log("Error in getAllPlayers");
-      throw new Error("Error in getAllPlayers: Une erreur s'est produite lors de la récupération des joueurs.");
+      console.error('Erreur lors de la récupération de tous les joueurs', error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la récupération de tous les joueurs.");
     }
   }
 
@@ -118,20 +121,50 @@ export class PlayersService {
    * Supprime un joueur par son ID.
    * @param playerId - L'ID du joueur à supprimer.
    * @returns Le joueur supprimé.
-   * @throws Error si une erreur se produit lors de la suppression du joueur.
+   * @throws NotFoundException si le joueur n'est pas trouvé.
    */
   async deletePlayer(playerId: number): Promise<Player> {
     try {
       const deletedPlayer = await this.prisma.player.delete({
-        where: {
-          id: playerId,
-        },
+        where: { id: playerId },
       });
+      if (!deletedPlayer) {
+        throw new NotFoundException(`Joueur avec l'ID ${playerId} introuvable`);
+      }
       return deletedPlayer;
     } catch (error) {
-      console.log("deletePlayer");
-      throw new Error("deletePlayer: Une erreur s'est produite lors de la suppression du joueur.");
+      console.error("Erreur lors de la suppression du joueur", error);
+      throw new InternalServerErrorException("Une erreur s'est produite lors de la suppression du joueur.");
     }
   }
 
+  /**
+   * Ajoute l'ID d'un match au tableau de matches d'un joueur.
+   * @param playerId - L'ID du joueur.
+   * @param matchId - L'ID du match à ajouter.
+   * @returns Le joueur mis à jour avec le match ajouté.
+   * @throws {NotFoundException} Si le joueur n'est pas trouvé.
+   * @throws {InternalServerErrorException} Si une erreur survient lors de la mise à jour du joueur.
+   */
+  async addMatchToPlayer(playerId: number, matchId: number): Promise<Player> {
+    try {
+      const existingPlayer = await this.getPlayerById(playerId);
+      const updatedPlayer = await this.prisma.player.update({
+        where: { id: playerId },
+        data: {
+          matchesA: {
+            connect: [{ id: matchId }],
+          },
+        },
+      });
+      return updatedPlayer;
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du match au joueur", error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        throw new InternalServerErrorException("Une erreur s'est produite lors de la mise à jour du joueur.");
+      }
+    }
+  }
 }

@@ -3,10 +3,10 @@ import { Player } from '@prisma/client';
 export declare class PlayersController {
     private readonly playersService;
     constructor(playersService: PlayersService);
-    getPlayerById(id: number): Promise<Player>;
-    setPlayerUrlPhotoProfile(id: number, urlPhotoProfile: string): Promise<Player>;
-    setPlayerPseudo(id: number, pseudo: string): Promise<Player>;
-    getAllMatchesByPlayerId(id: number): Promise<any>;
+    getPlayerById(req: any): Promise<Player>;
+    setPlayerUrlPhotoProfile(req: any, urlPhotoProfile: string): Promise<Player>;
+    setPlayerPseudo(req: any, pseudo: string): Promise<Player>;
+    getAllMatchesByPlayerId(req: any): Promise<any>;
     getAllPlayers(): Promise<Player[]>;
-    deletePlayer(id: number): Promise<Player>;
+    deletePlayer(req: any): Promise<Player>;
 }

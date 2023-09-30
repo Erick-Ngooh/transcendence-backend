@@ -19,59 +19,95 @@ let PlayersController = class PlayersController {
     constructor(playersService) {
         this.playersService = playersService;
     }
-    async getPlayerById(id) {
-        id = Number(id);
-        return this.playersService.getPlayerById(id);
+    async getPlayerById(req) {
+        try {
+            const id = Number(req.userId);
+            const player = await this.playersService.getPlayerById(id);
+            return player;
+        }
+        catch (error) {
+            throw new common_1.HttpException('Une erreur s\'est produite lors de la récupération du joueur par ID.', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    async setPlayerUrlPhotoProfile(id, urlPhotoProfile) {
-        id = Number(id);
-        return this.playersService.setPlayerUrlPhotoProfile(id, urlPhotoProfile);
+    async setPlayerUrlPhotoProfile(req, urlPhotoProfile) {
+        try {
+            const id = Number(req.userId);
+            const updatedPlayer = await this.playersService.setPlayerUrlPhotoProfile(id, urlPhotoProfile);
+            return updatedPlayer;
+        }
+        catch (error) {
+            throw new common_1.HttpException("Une erreur s'est produite lors de la mise à jour de l'URL de la photo du joueur.", common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    async setPlayerPseudo(id, pseudo) {
-        id = Number(id);
-        return this.playersService.setPlayerPseudo(id, pseudo);
+    async setPlayerPseudo(req, pseudo) {
+        try {
+            const id = Number(req.userId);
+            const updatedPlayer = await this.playersService.setPlayerPseudo(id, pseudo);
+            return updatedPlayer;
+        }
+        catch (error) {
+            throw new common_1.HttpException("Une erreur s'est produite lors de la mise à jour du pseudo du joueur.", common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    async getAllMatchesByPlayerId(id) {
-        id = Number(id);
-        return this.playersService.getAllMatchesByPlayerId(id);
+    async getAllMatchesByPlayerId(req) {
+        try {
+            const id = Number(req.userId);
+            const matches = await this.playersService.getAllMatchesByPlayerId(id);
+            return matches;
+        }
+        catch (error) {
+            throw new common_1.HttpException("Une erreur s'est produite lors de la récupération de tous les matches joués par le joueur.", common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     async getAllPlayers() {
-        return this.playersService.getAllPlayers();
+        try {
+            const players = await this.playersService.getAllPlayers();
+            return players;
+        }
+        catch (error) {
+            throw new common_1.HttpException("Une erreur s'est produite lors de la récupération de tous les joueurs.", common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    async deletePlayer(id) {
-        id = Number(id);
-        return this.playersService.deletePlayer(id);
+    async deletePlayer(req) {
+        try {
+            const playerId = req.userId;
+            const deletedPlayer = await this.playersService.deletePlayer(playerId);
+            return deletedPlayer;
+        }
+        catch (error) {
+            throw new common_1.HttpException("Une erreur s'est produite lors de la suppression du joueur.", common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 };
 exports.PlayersController = PlayersController;
 __decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)('id'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "getPlayerById", null);
 __decorate([
-    (0, common_1.Patch)(':id/photo'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Patch)('photo'),
+    __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)('urlPhotoProfile')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "setPlayerUrlPhotoProfile", null);
 __decorate([
-    (0, common_1.Patch)(':id/pseudo'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Patch)('pseudo'),
+    __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)('pseudo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "setPlayerPseudo", null);
 __decorate([
-    (0, common_1.Get)(':id/matches'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Get)('matches'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "getAllMatchesByPlayerId", null);
 __decorate([
@@ -81,10 +117,10 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "getAllPlayers", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    (0, common_1.Delete)('id'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PlayersController.prototype, "deletePlayer", null);
 exports.PlayersController = PlayersController = __decorate([
